@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1076674287741",
+    "project_id": "tracker-servicios-62bda",
+    "storage_bucket": "tracker-servicios-62bda.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1076674287741:android:40fb0eac69387c4892b914",
+        "android_client_info": {
+          "package_name": "com.upn.trackerservicios"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmu9-dxcDoC3WHcBuXigO8VEnXy2ahc8o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
