@@ -1,3 +1,11 @@
+import java.util.Properties
+
+val localProps = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        load(file.inputStream())
+    }
+}
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -17,6 +25,10 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        // --- AQUÍ INYECTAMOS EL TOKEN PÚBLICO DE MAPBOX ---
+        val mapboxToken = localProps.getProperty("MAPBOX_PUBLIC_TOKEN") ?: ""
+        resValue("string", "mapbox_access_token", "\"$mapboxToken\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -33,10 +45,22 @@ android {
     }
     buildFeatures {
         compose = true
+        resValues = true
     }
 }
 
 dependencies {
+    implementation("androidx.compose.material:material-icons-extended")
+    // --- LIBRERÍAS DE MAPBOX (Reemplazaron a las de Google Maps) ---
+    implementation("com.mapbox.maps:android:11.9.0")
+    implementation("com.mapbox.extension:maps-compose:11.9.0")
+
+    // --- TUS LIBRERÍAS INTACTAS ---
+    implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
