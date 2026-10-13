@@ -1,23 +1,25 @@
 package com.upn.trackerservicios.ui.recolector
 
 import androidx.lifecycle.ViewModel
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 data class PuntoRecoleccion(
     val id: String = "",
     val orden: Int = 0,
+    val direccion: String = "",
     val zona: String = "",
-    val completada: Boolean = false
+    val completada: Boolean = false,
+    val latitud: Double = 0.0,
+    val longitud: Double = 0.0
 )
 
 class RecolectorViewModel : ViewModel() {
 
-    private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
+    private var listenerRegistration: ListenerRegistration? = null
 
     private val _puntos = MutableStateFlow<List<PuntoRecoleccion>>(emptyList())
     val puntos = _puntos.asStateFlow()
@@ -30,12 +32,10 @@ class RecolectorViewModel : ViewModel() {
     }
 
     fun cargarRuta() {
-        val uidChofer = auth.currentUser?.uid ?: return
         _cargando.value = true
+        listenerRegistration?.remove()
 
-        firestore.collection("usuarios").document(uidChofer)
-            .collection("ruta_recoleccion")
-            .orderBy("orden", Query.Direction.ASCENDING)
+        listenerRegistration = firestore.collection("rutas_recoleccion")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     _cargando.value = false
@@ -43,45 +43,34 @@ class RecolectorViewModel : ViewModel() {
                 }
 
                 if (snapshot != null) {
-                    val lista = snapshot.documents.map { doc ->
+                    val docsOrdenados = snapshot.documents.sortedBy {
+                        it.getBoolean("completada") ?: false
+                    }
+
+                    val lista = docsOrdenados.mapIndexed { index, doc ->
                         PuntoRecoleccion(
                             id = doc.id,
-                            orden = doc.getLong("orden")?.toInt() ?: 0,
-                            zona = doc.getString("zona") ?: "",
-                            completada = doc.getBoolean("completada") ?: false
+                            orden = index + 1,
+                            direccion = doc.getString("direccion") ?: "Dirección en mapa",
+                            zona = doc.getString("zona") ?: "Sin referencia",
+                            completada = doc.getBoolean("completada") ?: false,
+                            latitud = doc.getDouble("latitud") ?: 0.0,
+                            longitud = doc.getDouble("longitud") ?: 0.0
                         )
                     }
                     _puntos.value = lista
-
-                    // Si está vacío, genera datos de prueba
-                    if (lista.isEmpty()) {
-                        generarRutaDePrueba(uidChofer)
-                    }
                 }
                 _cargando.value = false
             }
     }
 
     fun marcarPuntoCompletado(idPunto: String, completada: Boolean) {
-        val uidChofer = auth.currentUser?.uid ?: return
-        firestore.collection("usuarios").document(uidChofer)
-            .collection("ruta_recoleccion").document(idPunto)
+        firestore.collection("rutas_recoleccion").document(idPunto)
             .update("completada", completada)
     }
 
-    private fun generarRutaDePrueba(uid: String) {
-        val rutaPrueba = listOf(
-            mapOf("orden" to 1, "zona" to "Av. Vía de Evitamiento - Cuadras 1 a 5", "completada" to false),
-            mapOf("orden" to 2, "zona" to "Mercado Central - Contenedores Sur", "completada" to false),
-            mapOf("orden" to 3, "zona" to "Urb. Ramón Castilla - Parque Principal", "completada" to false),
-            mapOf("orden" to 4, "zona" to "Jr. Cruz de Piedra - Intersección Amalia Puga", "completada" to false)
-        )
-
-        val batch = firestore.batch()
-        rutaPrueba.forEach { datos ->
-            val docRef = firestore.collection("usuarios").document(uid).collection("ruta_recoleccion").document()
-            batch.set(docRef, datos)
-        }
-        batch.commit()
+    override fun onCleared() {
+        super.onCleared()
+        listenerRegistration?.remove()
     }
 }

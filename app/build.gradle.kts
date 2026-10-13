@@ -55,6 +55,7 @@ dependencies {
     implementation("com.mapbox.maps:android:11.9.0")
     implementation("com.mapbox.extension:maps-compose:11.9.0")
 
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     // --- TUS LIBRERÍAS INTACTAS ---
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
